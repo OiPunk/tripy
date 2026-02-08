@@ -1,0 +1,29 @@
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.idea/
+.DS_Store
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Secrets and local env
+.env
+.env.local
+
+# Local databases and runtime artifacts
+*.sqlite
+data/
+logs/
+web/node_modules/
+web/dist/
+web/.env
+
+# Optional generated assets
+static/generated/
+
+# Playwright artifacts
+web/playwright-report/
+web/test-results/
+output/

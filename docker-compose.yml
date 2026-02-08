@@ -1,0 +1,13 @@
+version: "3.9"
+services:
+  tripy:
+    build: .
+    container_name: tripy
+    env_file:
+      - .env
+    command: sh -c "alembic upgrade head && python main.py"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
