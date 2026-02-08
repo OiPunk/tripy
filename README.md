@@ -3,6 +3,8 @@
 [![CI](https://github.com/OiPunk/tripy/actions/workflows/ci.yml/badge.svg)](https://github.com/OiPunk/tripy/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](./pyproject.toml)
+[![Release](https://img.shields.io/github/v/release/OiPunk/tripy?include_prereleases)](https://github.com/OiPunk/tripy/releases)
+[![E2E](https://img.shields.io/badge/e2e-playwright-45ba63)](./web/e2e/tripy.spec.ts)
 
 Tripy is an enterprise-grade, graph-native travel assistant platform built with FastAPI + LangGraph.
 It provides secure auth, RBAC, migration-driven data management, observability hooks, and a production-ready web console.
