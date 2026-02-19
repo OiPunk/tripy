@@ -29,6 +29,7 @@ dependencies = [
   "pydantic>=2.8.0",
   "pydantic-settings>=2.6.0",
   "sqlalchemy>=2.0.35",
+  "pg8000>=1.31.2",
   "python-jose[cryptography]>=3.3.0",
   "passlib>=1.7.4",
   "langgraph>=0.2.35",

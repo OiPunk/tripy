@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
   apiBase,
   graphExecute,
@@ -29,6 +29,13 @@ const VIEWS: Array<{ id: ViewId; labelKey: string; descKey: string }> = [
   { id: "system", labelKey: "view.system", descKey: "view.systemDesc" }
 ];
 
+const QUICK_PROMPT_KEYS = [
+  "assistant.prompt.route",
+  "assistant.prompt.policy",
+  "assistant.prompt.change",
+  "assistant.prompt.incident"
+] as const;
+
 const viewPanelId = (id: ViewId) => `view-panel-${id}`;
 const viewTabId = (id: ViewId) => `view-tab-${id}`;
 
@@ -52,8 +59,19 @@ const buildMessage = (
   createdAt: new Date().toISOString()
 });
 
+const statusTone = (key: string): "ok" | "warn" | "error" => {
+  if (key.includes("Failed") || key.includes("Expired")) {
+    return "error";
+  }
+  if (key.includes("Interrupted")) {
+    return "warn";
+  }
+  return "ok";
+};
+
 export default function App() {
   const initialLocale = detectLocale();
+  const timelineRef = useRef<HTMLDivElement | null>(null);
 
   const [locale, setLocale] = useState<Locale>(initialLocale);
   const [activeView, setActiveView] = useState<ViewId>("assistant");
@@ -90,11 +108,35 @@ export default function App() {
   const canAdminUsers = permissions.includes("users:read");
   const canGraphExecute = permissions.includes("graph:execute");
 
-  const messageCount = useMemo(() => messages.length, [messages.length]);
+  const messageCount = messages.length;
+  const healthOk = healthState.live === "ok" && healthState.ready === "ok";
+  const readinessScore = useMemo(() => {
+    let base = 68;
+    if (healthOk) {
+      base += 16;
+    }
+    if (isAuthed) {
+      base += 6;
+    }
+    if (canGraphExecute) {
+      base += 6;
+    }
+    if (canAdminUsers) {
+      base += 4;
+    }
+    return Math.min(100, base);
+  }, [healthOk, isAuthed, canGraphExecute, canAdminUsers]);
 
   useEffect(() => {
     document.documentElement.lang = locale;
   }, [locale]);
+
+  useEffect(() => {
+    if (!timelineRef.current) {
+      return;
+    }
+    timelineRef.current.scrollTop = timelineRef.current.scrollHeight;
+  }, [messages, busyAction]);
 
   const runAction = async (action: string, fn: () => Promise<void>) => {
     setBusyAction(action);
@@ -246,17 +288,68 @@ export default function App() {
     });
   };
 
+  const applyPrompt = (key: (typeof QUICK_PROMPT_KEYS)[number]) => {
+    const nextPrompt = tt(key);
+    setQuery(nextPrompt);
+    setStatus({ key: "status.promptApplied" });
+  };
+
+  const handleViewKeyDown = (event: KeyboardEvent<HTMLButtonElement>, current: ViewId) => {
+    const currentIndex = VIEWS.findIndex((view) => view.id === current);
+    if (currentIndex === -1) {
+      return;
+    }
+
+    const moveTo = (index: number) => {
+      const normalized = (index + VIEWS.length) % VIEWS.length;
+      const target = VIEWS[normalized].id;
+      setActiveView(target);
+      requestAnimationFrame(() => {
+        const element = document.getElementById(viewTabId(target));
+        if (element instanceof HTMLButtonElement) {
+          element.focus();
+        }
+      });
+    };
+
+    switch (event.key) {
+      case "ArrowRight":
+      case "ArrowDown":
+        event.preventDefault();
+        moveTo(currentIndex + 1);
+        break;
+      case "ArrowLeft":
+      case "ArrowUp":
+        event.preventDefault();
+        moveTo(currentIndex - 1);
+        break;
+      case "Home":
+        event.preventDefault();
+        moveTo(0);
+        break;
+      case "End":
+        event.preventDefault();
+        moveTo(VIEWS.length - 1);
+        break;
+      default:
+        break;
+    }
+  };
+
+  const queryLength = query.trim().length;
+
   return (
     <div className="tripy-shell">
+      <div className="ambient-grid" aria-hidden="true" />
       <a href="#main-content" className="skip-link">
         {tt("skip.main")}
       </a>
 
       <header className="tripy-hero" role="banner">
-        <div className="hero-panel">
+        <div className="hero-panel hero-primary">
           <div className="hero-topbar">
             <p className="overline">{tt("hero.overline")}</p>
-            <div className="lang-switch" role="group" aria-label={tt("lang.switch")}> 
+            <div className="lang-switch" role="group" aria-label={tt("lang.switch")}>
               <button
                 type="button"
                 className={`lang-btn ${locale === "en" ? "active" : ""}`}
@@ -284,12 +377,22 @@ export default function App() {
             <span>LangGraph</span>
             <span>RBAC</span>
             <span>OpenTelemetry</span>
+            <span>Playwright</span>
           </div>
         </div>
 
         <div className="hero-panel telemetry-panel" aria-label="system metrics">
           <p className="mini-label">{tt("env.title")}</p>
-          <h3>{tt("env.snapshot")}</h3>
+          <div className="score-head">
+            <h3>{tt("env.snapshot")}</h3>
+            <div
+              className="score-ring"
+              style={{ ["--score" as string]: `${readinessScore}` }}
+              aria-label={`${tt("system.readinessScore")}: ${readinessScore}`}
+            >
+              <strong>{readinessScore}</strong>
+            </div>
+          </div>
           <p className="meta-line">
             {tt("env.apiBase")}: <code>{apiBase}</code>
           </p>
@@ -306,14 +409,16 @@ export default function App() {
           <p className="meta-line">
             {tt("env.checked")}: {healthState.checkedAt}
           </p>
-          <button
-            type="button"
-            className="ghost-btn"
-            onClick={handleCheckHealth}
-            disabled={busyAction === "health"}
-          >
-            {busyAction === "health" ? tt("env.checking") : tt("env.runHealth")}
-          </button>
+          <div className="button-row tight">
+            <button
+              type="button"
+              className="ghost-btn"
+              onClick={handleCheckHealth}
+              disabled={busyAction === "health"}
+            >
+              {busyAction === "health" ? tt("env.checking") : tt("env.runHealth")}
+            </button>
+          </div>
         </div>
       </header>
 
@@ -396,7 +501,8 @@ export default function App() {
 
           <section className="card nav-card" aria-label="workspace navigation">
             <h2>{tt("workspace.title")}</h2>
-            <div className="view-list" role="tablist" aria-label={tt("workspace.title")}>
+            <p className="session-hint">{tt("workspace.hint")}</p>
+            <div className="view-list" role="tablist" aria-label={tt("workspace.title")}> 
               {VIEWS.map((view) => (
                 <button
                   id={viewTabId(view.id)}
@@ -407,7 +513,8 @@ export default function App() {
                   aria-controls={viewPanelId(view.id)}
                   className={`view-btn ${activeView === view.id ? "active" : ""}`}
                   onClick={() => setActiveView(view.id)}
-                  data-testid={view.id === "admin" ? "tab-admin" : undefined}
+                  onKeyDown={(event) => handleViewKeyDown(event, view.id)}
+                  data-testid={`tab-${view.id}`}
                 >
                   <span>{tt(view.labelKey)}</span>
                   <small>{tt(view.descKey)}</small>
@@ -440,7 +547,29 @@ export default function App() {
                 </p>
               )}
 
+              <div className="assistant-toolbar">
+                <div className="quick-prompts" role="group" aria-label={tt("assistant.quickPrompts")}>
+                  {QUICK_PROMPT_KEYS.map((promptKey) => (
+                    <button
+                      key={promptKey}
+                      type="button"
+                      className="quick-btn"
+                      onClick={() => applyPrompt(promptKey)}
+                      data-testid={`quick-prompt-${promptKey}`}
+                    >
+                      {tt(promptKey)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="composer">
+                <div className="composer-head">
+                  <small>{tt("assistant.composerHint")}</small>
+                  <small className={`char-meter ${queryLength > 360 ? "warn" : ""}`}>
+                    {tt("assistant.charCount", { count: queryLength })}
+                  </small>
+                </div>
                 <textarea
                   rows={4}
                   placeholder={tt("assistant.placeholder")}
@@ -477,7 +606,7 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="timeline" aria-live="polite">
+              <div ref={timelineRef} className="timeline" aria-live="polite">
                 {messages.length === 0 ? (
                   <div className="empty-state">
                     <h4>{tt("assistant.emptyTitle")}</h4>
@@ -486,8 +615,8 @@ export default function App() {
                 ) : (
                   messages.map((message) => (
                     <article key={message.id} className={`msg msg-${message.role}`}>
-                      <header>
-                        <strong>{message.role}</strong>
+                      <header className="msg-meta">
+                        <strong>{tt(`assistant.role.${message.role}`)}</strong>
                         <small>{formatTimestamp(message.createdAt, locale)}</small>
                       </header>
                       <p>{message.text}</p>
@@ -496,6 +625,13 @@ export default function App() {
                       )}
                     </article>
                   ))
+                )}
+                {busyAction === "graph" && (
+                  <div className="typing-row" aria-hidden="true">
+                    <span />
+                    <span />
+                    <span />
+                  </div>
                 )}
               </div>
             </section>
@@ -630,7 +766,7 @@ export default function App() {
                 <h2>{tt("system.title")}</h2>
               </div>
 
-              <div className="identity-grid">
+              <div className="system-grid">
                 <article>
                   <h4>{tt("system.connection")}</h4>
                   <p>
@@ -666,14 +802,31 @@ export default function App() {
                   <p>
                     <strong>{tt("system.thread")}:</strong> {threadId || "-"}
                   </p>
+                  <p>
+                    <strong>{tt("system.readinessScore")}:</strong> {readinessScore}
+                  </p>
                 </article>
+              </div>
+
+              <div className="card readiness-card">
+                <h4>{tt("system.readinessTitle")}</h4>
+                <ul className="readiness-list">
+                  <li className="is-ready">{tt("system.readinessBackend")}</li>
+                  <li className="is-ready">{tt("system.readinessFrontend")}</li>
+                  <li className="is-ready">{tt("system.readinessQuality")}</li>
+                  <li className="is-pending">{tt("system.readinessCloud")}</li>
+                </ul>
               </div>
             </section>
           )}
         </main>
       </div>
 
-      <footer className="status-bar" aria-live="polite" data-testid="status-bar">
+      <footer
+        className={`status-bar tone-${statusTone(status.key)}`}
+        aria-live="polite"
+        data-testid="status-bar"
+      >
         {tt(status.key, status.params)}
       </footer>
     </div>

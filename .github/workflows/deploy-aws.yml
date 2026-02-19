@@ -1,0 +1,123 @@
+name: Deploy AWS
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Image tag for API container"
+        required: false
+        default: ""
+      environment:
+        description: "Terraform environment name"
+        required: false
+        default: "prod"
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: deploy-aws-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
+      TF_VAR_aws_region: ${{ vars.AWS_REGION || 'us-east-1' }}
+      TF_VAR_environment: ${{ inputs.environment }}
+      TF_VAR_openai_api_key: ${{ secrets.OPENAI_API_KEY || 'EMPTY' }}
+      TF_VAR_jwt_secret_key: ${{ secrets.JWT_SECRET_KEY || '' }}
+      TF_VAR_bootstrap_admin_password: ${{ secrets.BOOTSTRAP_ADMIN_PASSWORD || '' }}
+      TF_VAR_acm_certificate_arn: ${{ vars.ACM_CERTIFICATE_ARN || '' }}
+      TF_VAR_extra_cors_origins: ${{ vars.EXTRA_CORS_ORIGINS_JSON || '[]' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform init
+        run: terraform -chdir=infra/terraform init
+
+      - name: Ensure ECR repository exists
+        run: terraform -chdir=infra/terraform apply -target=aws_ecr_repository.api -auto-approve
+
+      - name: Resolve ECR URL
+        id: ecr
+        run: |
+          echo "repo=$(terraform -chdir=infra/terraform output -raw api_ecr_repository_url)" >> "$GITHUB_OUTPUT"
+
+      - name: Login to ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Resolve image tag
+        id: image
+        run: |
+          TAG="${{ inputs.image_tag }}"
+          if [ -z "$TAG" ]; then
+            TAG="${GITHUB_SHA}"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push API image
+        env:
+          ECR_REPO: ${{ steps.ecr.outputs.repo }}
+          IMAGE_TAG: ${{ steps.image.outputs.tag }}
+        run: |
+          docker build -t "$ECR_REPO:$IMAGE_TAG" .
+          docker push "$ECR_REPO:$IMAGE_TAG"
+
+      - name: Terraform apply full stack
+        env:
+          ECR_REPO: ${{ steps.ecr.outputs.repo }}
+          IMAGE_TAG: ${{ steps.image.outputs.tag }}
+        run: |
+          terraform -chdir=infra/terraform apply -auto-approve -var "api_image=${ECR_REPO}:${IMAGE_TAG}"
+
+      - name: Read infrastructure outputs
+        id: tfout
+        run: |
+          echo "api_base=$(terraform -chdir=infra/terraform output -raw api_base_url)" >> "$GITHUB_OUTPUT"
+          echo "web_bucket=$(terraform -chdir=infra/terraform output -raw web_bucket_name)" >> "$GITHUB_OUTPUT"
+          echo "web_dist=$(terraform -chdir=infra/terraform output -raw web_cloudfront_distribution_id)" >> "$GITHUB_OUTPUT"
+          echo "web_url=$(terraform -chdir=infra/terraform output -raw web_url)" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: web/package-lock.json
+
+      - name: Build web bundle
+        env:
+          VITE_API_BASE: ${{ steps.tfout.outputs.api_base }}/api/v1
+        run: |
+          cd web
+          npm ci
+          npm run build
+
+      - name: Upload web bundle to S3
+        env:
+          WEB_BUCKET: ${{ steps.tfout.outputs.web_bucket }}
+        run: aws s3 sync web/dist "s3://${WEB_BUCKET}" --delete
+
+      - name: Invalidate CloudFront cache
+        env:
+          DIST_ID: ${{ steps.tfout.outputs.web_dist }}
+        run: aws cloudfront create-invalidation --distribution-id "$DIST_ID" --paths "/*"
+
+      - name: Deployment summary
+        run: |
+          echo "API Base: ${{ steps.tfout.outputs.api_base }}"
+          echo "Web URL:   ${{ steps.tfout.outputs.web_url }}"

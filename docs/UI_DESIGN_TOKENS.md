@@ -4,9 +4,9 @@ Token baseline for `tripy/web/src/styles.css`.
 
 ## Token Strategy
 
-- Tokens are defined in `:root` with CSS custom properties.
-- Component styles should consume tokens, not raw color literals.
-- New tokens require semantic naming and documented intent.
+- Define semantic tokens in `:root` only.
+- Consume tokens in component styles; avoid one-off hardcoded values.
+- Keep visual direction consistent: cloud-control, high-clarity, low-noise.
 
 ## Typography
 
@@ -16,58 +16,56 @@ Primary tokens:
 
 Scale guidance:
 - Body: `14px`
-- Meta: `11px`-`13px`
-- Section heading: `20px`
-- Hero heading: `clamp(30px, 3.4vw, 50px)`
+- Meta: `10px`-`13px`
+- Section heading: `22px`
+- Hero heading: `clamp(32px, 3.7vw, 56px)`
 
 ## Color System
 
-Background/surfaces:
-- `--bg-top`, `--bg-bottom`
+Background:
+- `--bg-0`, `--bg-1`
+
+Surface:
 - `--panel`, `--panel-strong`
+- `--line`
 
 Text:
 - `--ink`, `--ink-muted`
 
-Brand/action:
-- `--teal`, `--teal-strong`
+Brand and state:
+- `--brand`, `--brand-strong`
+- `--accent` (success / healthy)
+- `--amber` (warning / interruption)
+- `--danger` (error / failure)
 
-State accents:
-- Success/online states use green-tinted chips
-- Warning states use amber-tinted containers
-- Error/system messages use red-tinted containers
+## Elevation and Shape
 
-Elevation and borders:
-- `--line`
-- `--shadow-1`, `--shadow-2`
-
-## Layout Tokens
-
-Spacing rhythm:
-- Panel gaps: `14px`-`18px`
-- Form/control gaps: `6px`-`10px`
-- Primary panel padding: `20px`-`30px`
-
-Corner radii:
-- Primary cards: `20px`-`22px`
-- Interactive controls: `12px`-`14px`
-- Pills/chips: `999px`
+- `--shadow-soft`, `--shadow-deep`
+- `--radius-card`, `--radius-control`, `--radius-pill`
 
 ## Motion
 
-- Entry animation: `rise`
-- Duration envelope: `0.18s`-`0.44s`
+- Entry motion: `rise`
+- Async feedback motion: `pulse`
+- Duration envelope: `0.18s`-`0.45s`
 - Prefer transform + opacity transitions
+
+## Layout
+
+- Hero + telemetry split on desktop, stacked on tablet/mobile
+- Sticky utility rail on large screens only
+- Interaction density reduces automatically under `940px`
 
 ## Accessibility Constraints
 
-- Maintain visible focus states for all interactive controls.
-- Ensure text and controls meet WCAG AA contrast targets.
-- Preserve minimum control size suitable for touch usage.
+- Keep explicit focus-visible rings for all controls.
+- Preserve landmark regions and skip-link behavior.
+- Preserve semantic `tablist` / `tab` / `tabpanel` structure.
+- Keep color contrast at WCAG AA minimum.
 
 ## Governance
 
 When updating token semantics:
-1. Update `src/styles.css` token values/usages.
+1. Update `web/src/styles.css` tokens and usages.
 2. Update this document.
-3. Run `npm run test:e2e` and verify no a11y regression.
+3. Run `npm run build` and `npm run test:e2e`.

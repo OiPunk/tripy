@@ -37,8 +37,15 @@ def upgrade() -> None:
         ),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("code"),
+        if_not_exists=True,
     )
-    op.create_index(op.f("ix_permissions_code"), "permissions", ["code"], unique=False)
+    op.create_index(
+        op.f("ix_permissions_code"),
+        "permissions",
+        ["code"],
+        unique=False,
+        if_not_exists=True,
+    )
 
     op.create_table(
         "roles",
@@ -59,8 +66,15 @@ def upgrade() -> None:
         ),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("name"),
+        if_not_exists=True,
     )
-    op.create_index(op.f("ix_roles_name"), "roles", ["name"], unique=False)
+    op.create_index(
+        op.f("ix_roles_name"),
+        "roles",
+        ["name"],
+        unique=False,
+        if_not_exists=True,
+    )
 
     op.create_table(
         "users",
@@ -86,8 +100,15 @@ def upgrade() -> None:
         ),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("username"),
+        if_not_exists=True,
     )
-    op.create_index(op.f("ix_users_username"), "users", ["username"], unique=False)
+    op.create_index(
+        op.f("ix_users_username"),
+        "users",
+        ["username"],
+        unique=False,
+        if_not_exists=True,
+    )
 
     op.create_table(
         "role_permissions",
@@ -96,6 +117,7 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["permission_id"], ["permissions.id"], ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["role_id"], ["roles.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("role_id", "permission_id"),
+        if_not_exists=True,
     )
 
     op.create_table(
@@ -105,15 +127,16 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["role_id"], ["roles.id"], ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("user_id", "role_id"),
+        if_not_exists=True,
     )
 
 
 def downgrade() -> None:
-    op.drop_table("user_roles")
-    op.drop_table("role_permissions")
-    op.drop_index(op.f("ix_users_username"), table_name="users")
-    op.drop_table("users")
-    op.drop_index(op.f("ix_roles_name"), table_name="roles")
-    op.drop_table("roles")
-    op.drop_index(op.f("ix_permissions_code"), table_name="permissions")
-    op.drop_table("permissions")
+    op.drop_table("user_roles", if_exists=True)
+    op.drop_table("role_permissions", if_exists=True)
+    op.drop_index(op.f("ix_users_username"), table_name="users", if_exists=True)
+    op.drop_table("users", if_exists=True)
+    op.drop_index(op.f("ix_roles_name"), table_name="roles", if_exists=True)
+    op.drop_table("roles", if_exists=True)
+    op.drop_index(op.f("ix_permissions_code"), table_name="permissions", if_exists=True)
+    op.drop_table("permissions", if_exists=True)

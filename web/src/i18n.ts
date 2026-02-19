@@ -27,10 +27,11 @@ const messages: Record<Locale, Dictionary> = {
     "status.usersLoaded": ({ count }) => `Loaded ${count} users.`,
     "status.usersFailed": ({ reason }) => `Load users failed: ${reason}`,
     "status.sessionExpired": ({ reason }) => `Session expired: ${reason}`,
+    "status.promptApplied": "Prompt template applied to composer.",
 
     "hero.overline": "Tripy Enterprise Console",
-    "hero.title": "Graph-native travel assistant with production-grade governance.",
-    "hero.copy": "Secure auth, RBAC, observability-ready backend, and a real-time operator surface for mission-critical workflows.",
+    "hero.title": "Graph-native travel operations with governance built in.",
+    "hero.copy": "Secure auth, RBAC, observability-ready backend, and a premium operator surface for mission-critical workflows.",
 
     "env.title": "Environment",
     "env.snapshot": "System Snapshot",
@@ -57,6 +58,7 @@ const messages: Record<Locale, Dictionary> = {
     "register.creating": "Creating...",
 
     "workspace.title": "Workspace",
+    "workspace.hint": "Use Arrow keys, Home, End to move between tabs.",
     "view.assistant": "Graph Assistant",
     "view.assistantDesc": "Threaded travel workflow",
     "view.identity": "Identity",
@@ -64,20 +66,30 @@ const messages: Record<Locale, Dictionary> = {
     "view.admin": "Admin",
     "view.adminDesc": "User inventory",
     "view.system": "System",
-    "view.systemDesc": "Health and config",
+    "view.systemDesc": "Readiness and diagnostics",
 
     "assistant.title": "Graph Assistant",
     "assistant.thread": "Thread",
     "assistant.newThread": "new",
     "assistant.tip": "Press Cmd/Ctrl + Enter in the input box to send quickly.",
     "assistant.noPermission": "This user does not have graph:execute permission.",
+    "assistant.quickPrompts": "Quick prompt templates",
+    "assistant.prompt.route": "Design a multi-city itinerary with transfer risk notes.",
+    "assistant.prompt.policy": "Check this trip against policy and list compliance exceptions.",
+    "assistant.prompt.change": "Re-plan after a flight delay and keep cost impact minimal.",
+    "assistant.prompt.incident": "Draft a disruption response with customer communication steps.",
+    "assistant.composerHint": "Use a specific context for stronger graph results.",
+    "assistant.charCount": ({ count }) => `${count} characters`,
     "assistant.placeholder": "Ask Tripy to plan or reason through a travel task...",
     "assistant.send": "Send",
     "assistant.sending": "Running graph...",
     "assistant.clear": "Clear thread",
     "assistant.emptyTitle": "No conversation yet",
-    "assistant.emptyDesc": "Start with a request such as booking changes, policy checks, or route advice.",
+    "assistant.emptyDesc": "Start with booking changes, policy checks, or route advice.",
     "assistant.interrupted": "Interrupted flow",
+    "assistant.role.user": "User",
+    "assistant.role.assistant": "Assistant",
+    "assistant.role.system": "System",
 
     "identity.title": "Identity & RBAC",
     "identity.notSigned": "Not signed in",
@@ -115,7 +127,13 @@ const messages: Record<Locale, Dictionary> = {
     "system.roles": "Roles",
     "system.permissions": "Permissions",
     "system.messages": "Messages",
-    "system.thread": "Thread"
+    "system.thread": "Thread",
+    "system.readinessScore": "Readiness score",
+    "system.readinessTitle": "Launch Readiness",
+    "system.readinessBackend": "Backend governance and RBAC controls are complete.",
+    "system.readinessFrontend": "Frontend UX, accessibility and bilingual UI are complete.",
+    "system.readinessQuality": "CI quality gates and end-to-end tests are complete.",
+    "system.readinessCloud": "AWS production deployment is the remaining milestone."
   },
   zh: {
     "lang.en": "EN",
@@ -139,10 +157,11 @@ const messages: Record<Locale, Dictionary> = {
     "status.usersLoaded": ({ count }) => `已加载 ${count} 个用户。`,
     "status.usersFailed": ({ reason }) => `加载用户失败：${reason}`,
     "status.sessionExpired": ({ reason }) => `会话失效：${reason}`,
+    "status.promptApplied": "已将提示模板写入输入区。",
 
     "hero.overline": "Tripy 企业控制台",
-    "hero.title": "面向生产治理的图编排旅行助手。",
-    "hero.copy": "提供安全认证、RBAC、可观测后端与实时操作台，支撑关键业务流程。",
+    "hero.title": "内建治理能力的图编排旅行运营平台。",
+    "hero.copy": "提供安全认证、RBAC、可观测后端与高质量操作台，支撑关键业务流程。",
 
     "env.title": "环境",
     "env.snapshot": "系统快照",
@@ -169,6 +188,7 @@ const messages: Record<Locale, Dictionary> = {
     "register.creating": "创建中...",
 
     "workspace.title": "工作区",
+    "workspace.hint": "可用方向键、Home、End 在标签间切换。",
     "view.assistant": "图助手",
     "view.assistantDesc": "线程化旅行流程",
     "view.identity": "身份",
@@ -176,13 +196,20 @@ const messages: Record<Locale, Dictionary> = {
     "view.admin": "管理",
     "view.adminDesc": "用户清单",
     "view.system": "系统",
-    "view.systemDesc": "健康与配置",
+    "view.systemDesc": "就绪状态与诊断",
 
     "assistant.title": "图助手",
     "assistant.thread": "线程",
     "assistant.newThread": "新建",
     "assistant.tip": "可在输入框使用 Cmd/Ctrl + Enter 快速发送。",
     "assistant.noPermission": "当前用户缺少 graph:execute 权限。",
+    "assistant.quickPrompts": "快捷提示模板",
+    "assistant.prompt.route": "设计多城市行程，并给出中转风险提示。",
+    "assistant.prompt.policy": "检查该行程是否合规，并列出例外项。",
+    "assistant.prompt.change": "航班延误后重排方案，并尽量降低成本影响。",
+    "assistant.prompt.incident": "生成中断事件响应方案和客户沟通步骤。",
+    "assistant.composerHint": "输入越具体，图编排结果越可靠。",
+    "assistant.charCount": ({ count }) => `${count} 字符`,
     "assistant.placeholder": "请输入旅行相关任务，让 Tripy 进行规划或推理...",
     "assistant.send": "发送",
     "assistant.sending": "图执行中...",
@@ -190,6 +217,9 @@ const messages: Record<Locale, Dictionary> = {
     "assistant.emptyTitle": "暂无对话",
     "assistant.emptyDesc": "可以先输入改签、政策检查、路线建议等请求。",
     "assistant.interrupted": "流程中断",
+    "assistant.role.user": "用户",
+    "assistant.role.assistant": "助手",
+    "assistant.role.system": "系统",
 
     "identity.title": "身份与 RBAC",
     "identity.notSigned": "未登录",
@@ -227,7 +257,13 @@ const messages: Record<Locale, Dictionary> = {
     "system.roles": "角色",
     "system.permissions": "权限数",
     "system.messages": "消息数",
-    "system.thread": "线程"
+    "system.thread": "线程",
+    "system.readinessScore": "就绪评分",
+    "system.readinessTitle": "发布就绪度",
+    "system.readinessBackend": "后端治理能力与 RBAC 控制已完成。",
+    "system.readinessFrontend": "前端体验、可访问性与双语界面已完成。",
+    "system.readinessQuality": "CI 质量门禁与端到端测试已完成。",
+    "system.readinessCloud": "当前仅剩 AWS 生产部署里程碑。"
   }
 };
 

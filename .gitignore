@@ -27,3 +27,11 @@ static/generated/
 web/playwright-report/
 web/test-results/
 output/
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+*.tfvars
+*.tfplan

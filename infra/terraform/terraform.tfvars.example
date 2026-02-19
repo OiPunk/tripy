@@ -1,0 +1,15 @@
+aws_region   = "us-east-1"
+project_name = "tripy"
+environment  = "prod"
+
+# Set after pushing API image to ECR
+api_image = "123456789012.dkr.ecr.us-east-1.amazonaws.com/tripy-prod-api:latest"
+
+# Provide secrets through secure CI variables in real deployment.
+openai_api_key           = "sk-..."
+jwt_secret_key           = "replace-with-strong-random-value"
+bootstrap_admin_password = "replace-with-strong-random-value"
+
+# Optional
+acm_certificate_arn = ""
+extra_cors_origins  = []

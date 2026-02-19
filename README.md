@@ -9,6 +9,12 @@
 Tripy is an enterprise-grade, graph-native travel assistant platform built with FastAPI + LangGraph.
 It provides secure auth, RBAC, migration-driven data management, observability hooks, and a production-ready web console.
 
+## Delivery Status
+
+- Application layer: complete (backend + frontend + CI quality gates)
+- AWS deployment assets: complete (`infra/terraform` + `Deploy AWS` workflow)
+- Remaining milestone: run deployment in target AWS account
+
 ## Why Tripy
 
 - Production-first backend architecture (`src/` layout, typed schemas, migration workflow)
@@ -98,6 +104,12 @@ make web-build
 make web-test-e2e
 ```
 
+## AWS Deployment
+
+- Terraform stack: `infra/terraform`
+- CI deployment workflow: `.github/workflows/deploy-aws.yml`
+- Full guide: [`docs/AWS_DEPLOYMENT.md`](./docs/AWS_DEPLOYMENT.md)
+
 ## API Surface (Core)
 
 - `GET /api/v1/health/live`
@@ -143,6 +155,7 @@ legacy:
 - [Frontend Contributing](./docs/FRONTEND_CONTRIBUTING.md)
 - [UI Design Tokens](./docs/UI_DESIGN_TOKENS.md)
 - [Roadmap](./docs/ROADMAP.md)
+- [AWS Deployment](./docs/AWS_DEPLOYMENT.md)
 
 ## Open Source Standards
 

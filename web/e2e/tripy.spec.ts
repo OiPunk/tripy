@@ -108,6 +108,25 @@ test("login + conversation + admin flow works", async ({ page }) => {
   await expect(firstRow).toContainText("users:read");
 });
 
+test("quick prompts and keyboard tab navigation work", async ({ page }) => {
+  await page.goto("/");
+  await page.getByTestId("login-button").click();
+
+  await page.getByTestId("quick-prompt-assistant.prompt.route").click();
+  const input = page.getByTestId("assistant-input");
+  await expect(input).not.toHaveValue("");
+
+  await page.getByTestId("tab-assistant").focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(page.getByTestId("tab-identity")).toHaveAttribute("aria-selected", "true");
+
+  await page.keyboard.press("End");
+  await expect(page.getByTestId("tab-system")).toHaveAttribute("aria-selected", "true");
+
+  await page.keyboard.press("Home");
+  await expect(page.getByTestId("tab-assistant")).toHaveAttribute("aria-selected", "true");
+});
+
 test("a11y audit has no serious violations", async ({ page }) => {
   await page.goto("/");
   const results = await new AxeBuilder({ page }).analyze();
